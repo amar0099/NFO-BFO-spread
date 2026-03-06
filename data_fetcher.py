@@ -122,3 +122,21 @@ def load_from_csv(date_str):
         df = pd.read_csv(filepath, index_col=0, parse_dates=True)
         return df
     return pd.DataFrame()
+
+
+# ─────────────────────────────────────────────
+# FETCH SPOT PRICE (latest quote)
+# NSE:NIFTY50-INDEX  / BSE:SENSEX-INDEX
+# ─────────────────────────────────────────────
+
+def fetch_spot_candles(fyers, symbol, interval, date_str=None):
+    """
+    Fetches candles for a spot index symbol.
+    Returns DataFrame indexed by datetime (IST)
+    """
+    return fetch_candles(fyers, symbol, interval, date_str)
+
+
+def round_to(value, base):
+    """Round value to nearest base (e.g. 100)"""
+    return int(round(value / base) * base)
