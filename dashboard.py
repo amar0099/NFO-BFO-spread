@@ -118,27 +118,38 @@ def load_fyers_from_file():
     return fyersModel.FyersModel(client_id=get_secret("FYERS_CLIENT_ID") or CLIENT_ID, token=token, log_path="")
 
 def get_fyers_client():
-    # Return cached client if already created this session
-    if "fyers_client" in st.session_state and st.session_state.fyers_client is not None:
-        return st.session_state.fyers_client
+    # Return cached client using stored token string — survives reruns
+    if "access_token" in st.session_state and st.session_state.access_token:
+        cid = get_secret("FYERS_CLIENT_ID") or CLIENT_ID
+        return fyersModel.FyersModel(client_id=cid, token=st.session_state.access_token, log_path="")
 
     # Try local token file first (local PC)
     try:
         client = load_fyers_from_file()
-        st.session_state.fyers_client = client
+        with open(TOKEN_FILE) as f:
+            st.session_state.access_token = f.read().strip()
         return client
     except FileNotFoundError:
         pass
 
-    # Auto-generate token using TOTP (Streamlit Cloud) — only once per session
+    # Prevent multiple simultaneous token requests
+    if st.session_state.get("token_generating", False):
+        st.warning("⏳ Token generation in progress...")
+        return None
+
+    st.session_state.token_generating = True
+
+    # Auto-generate token using TOTP — only once per session
     token, error = generate_token()
+    st.session_state.token_generating = False
+
     if not token:
         st.error(f"❌ Token generation failed: {error}")
         return None
 
-    client = fyersModel.FyersModel(client_id=get_secret("FYERS_CLIENT_ID") or CLIENT_ID, token=token, log_path="")
-    st.session_state.fyers_client = client
-    return client
+    st.session_state.access_token = token
+    cid = get_secret("FYERS_CLIENT_ID") or CLIENT_ID
+    return fyersModel.FyersModel(client_id=cid, token=token, log_path="")
 
 # ─────────────────────────────────────────────
 # SYMBOL BUILDER
