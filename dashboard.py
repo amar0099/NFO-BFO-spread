@@ -118,15 +118,27 @@ def load_fyers_from_file():
     return fyersModel.FyersModel(client_id=get_secret("FYERS_CLIENT_ID") or CLIENT_ID, token=token, log_path="")
 
 def get_fyers_client():
+    # Return cached client if already created this session
+    if "fyers_client" in st.session_state and st.session_state.fyers_client is not None:
+        return st.session_state.fyers_client
+
+    # Try local token file first (local PC)
     try:
-        return load_fyers_from_file()
+        client = load_fyers_from_file()
+        st.session_state.fyers_client = client
+        return client
     except FileNotFoundError:
         pass
+
+    # Auto-generate token using TOTP (Streamlit Cloud) — only once per session
     token, error = generate_token()
     if not token:
         st.error(f"❌ Token generation failed: {error}")
         return None
-    return fyersModel.FyersModel(client_id=get_secret("FYERS_CLIENT_ID") or CLIENT_ID, token=token, log_path="")
+
+    client = fyersModel.FyersModel(client_id=get_secret("FYERS_CLIENT_ID") or CLIENT_ID, token=token, log_path="")
+    st.session_state.fyers_client = client
+    return client
 
 # ─────────────────────────────────────────────
 # SYMBOL BUILDER
