@@ -209,7 +209,7 @@ def fetch_live_data():
 
     df["ce_spread"] = df["sensex_ce"] - (df["nifty_ce"] * multiplier)
     df["pe_spread"] = df["sensex_pe"] - (df["nifty_pe"] * multiplier)
-    df["diff"]      = df["ce_spread"] - df["pe_spread"]
+    df["diff"]      = df["ce_spread"] + df["pe_spread"]
 
     return df
 
