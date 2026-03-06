@@ -59,7 +59,10 @@ def generate_token():
         s = requests.Session()
         r1 = s.post("https://api-t2.fyers.in/vagator/v2/send_login_otp_v2",
                     json={"fy_id": b64(username), "app_id": "2"}, timeout=10)
-        r1d = r1.json()
+        try:
+            r1d = r1.json()
+        except Exception:
+            return None, f"Step 1 bad response (status {r1.status_code}): {r1.text[:200]}"
         if r1d.get("s") != "ok":
             return None, f"Step 1 failed: {r1d}"
 
