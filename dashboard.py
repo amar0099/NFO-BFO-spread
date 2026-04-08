@@ -893,7 +893,7 @@ with tab1:
     r0 = st.columns([1.2, 1, 1, 1, 1, 1, 1, 1.5])
     with r0[0]: selected_date  = st.date_input("Date", value=default_date, key="date_inp")
     with r0[1]: multiplier     = st.number_input("Ratio", value=3.3, step=0.1, min_value=0.1, key="mult")
-    with r0[2]: candle_interval= st.selectbox("Interval (min)", [1, 3, 5, 10, 15, 30, 60], index=2, key="interval")
+    with r0[2]: candle_interval= st.selectbox("Interval (min)", [1, 3, 5, 10, 15, 30, 60], index=0, key="interval")
     with r0[3]: show_diff      = st.checkbox("4-Leg Chart", value=True, key="show_diff")
     with r0[4]: auto_refresh   = st.checkbox("Auto Refresh", value=True, key="auto_ref")
     with r0[5]: refresh_secs   = st.slider("Refresh (sec)", 5, 60, REFRESH_SECONDS, key="ref_sec")
