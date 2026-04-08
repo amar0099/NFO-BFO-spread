@@ -714,7 +714,7 @@ with tab2:
 
     c_row = st.columns([1.2, 1, 1, 1, 1.5])
     with c_row[0]: custom_date     = st.date_input("Date",       value=default_date,           key="c_date")
-    with c_row[1]: custom_interval = st.selectbox("Interval",    [1,3,5,10,15,30,60], index=2, key="c_interval")
+    with c_row[1]: custom_interval = st.selectbox("Interval",    [1,3,5,10,15,30,60], index=0, key="c_interval")
     with c_row[2]: c_auto          = st.checkbox("Auto Refresh", value=False,                  key="c_auto_refresh")
     with c_row[3]: c_secs          = st.slider("Sec", 5, 60, 10,                               key="c_refresh_secs")
     with c_row[4]: custom_fetch    = st.button("⟳  FETCH 4-LEG DATA", type="primary", use_container_width=True, key="c_fetch")
