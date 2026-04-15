@@ -210,13 +210,13 @@ def _save_expiry_cache(expiries: dict):
 
 @st.cache_resource
 def _fetch_expiries_from_fyers(client_id, token, fyers_sym):
-    """Hits Fyers option chain API. Cached in memory for the server process lifetime."""
+    """Hits Fyers option chain API. Returns (dict, error_str)."""
     from collections import defaultdict
     try:
         fyers = fyersModel.FyersModel(client_id=client_id, token=token, log_path="")
         resp = fyers.optionchain(data={"symbol": fyers_sym, "strikecount": 1, "timestamp": ""})
         if not (resp and resp.get("s") == "ok"):
-            raise RuntimeError(f"optionchain failed: {resp}")
+            return {}, f"optionchain API returned: {resp}"
         raw = resp.get("data", {}).get("expiryData", [])
 
         parsed = []
@@ -247,9 +247,9 @@ def _fetch_expiries_from_fyers(client_id, token, fyers_sym):
                 code  = f"{yy:02d}{mm:02d}{dd:02d}"
                 label = f"{dd:02d} {mon} {yy:02d} (W)"
             result[label] = code
-        return result
-    except Exception:
-        return {}
+        return result, None
+    except Exception as e:
+        return {}, str(e)
 
 def get_expiries_for(exchange, underlying):
     """Returns expiry dict — served from daily file cache; hits Fyers only once per day."""
@@ -266,12 +266,12 @@ def get_expiries_for(exchange, underlying):
         if not token:
             return {}
         cid = get_secret("FYERS_CLIENT_ID") or CLIENT_ID
-        result = _fetch_expiries_from_fyers(cid, token, sym)
+        result, err = _fetch_expiries_from_fyers(cid, token, sym)
         if result:
             cached[sym] = result
             _save_expiry_cache(cached)
         else:
-            st.warning(f"⚠️ Expiry fetch returned empty for `{sym}` — check token or optionchain API.")
+            st.warning(f"⚠️ Expiry fetch failed for `{sym}`: {err}")
         return result
     except Exception as e:
         st.warning(f"⚠️ Expiry fetch exception for `{sym}`: {e}")
