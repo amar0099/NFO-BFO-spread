@@ -86,10 +86,10 @@ def generate_token(client_id, secret_key, username, pin, totp_key):
 
         data = r4d.get("data", {})
 
-        # New Fyers API: data.auth IS the final access token — prefix with client_id as SDK expects
+        # New Fyers API: data.auth IS the final access token (raw JWT).
+        # Do NOT prefix with client_id — FyersModel adds it internally.
         if data.get("auth"):
-            token = f"{client_id}:{data['auth']}"
-            return token, None
+            return data["auth"], None
 
         # Old Fyers API: redirect URL contains auth_code → exchange for access token
         redirect_url = r4d.get("Url", "") or data.get("url", "")
