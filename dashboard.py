@@ -19,6 +19,9 @@ from scipy.stats import norm
 from scipy.optimize import brentq
 from fyers_apiv3 import fyersModel
 
+import os
+st.write("Working dir:", os.getcwd())
+
 # ─────────────────────────────────────────────
 # CONFIG — edit these or set as env variables
 # ─────────────────────────────────────────────
