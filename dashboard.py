@@ -5,6 +5,7 @@
 
 import os
 import base64
+import hashlib
 import pyotp
 import requests
 import pandas as pd
@@ -85,25 +86,32 @@ def generate_token(client_id, secret_key, username, pin, totp_key):
             return None, f"Step 4 failed: {r4d}"
 
         data = r4d.get("data", {})
-
-        # New Fyers API: data.auth IS the final access token (raw JWT).
-        # Do NOT prefix with client_id — FyersModel adds it internally.
-        if data.get("auth"):
-            return data["auth"], None
-
-        # Old Fyers API: redirect URL contains auth_code → exchange for access token
-        redirect_url = r4d.get("Url", "") or data.get("url", "")
-        auth_code = parse_qs(urlparse(redirect_url).query).get("auth_code", [None])[0]
-        if not auth_code:
-            return None, f"Step 4: no token or auth_code in response: {r4d}"
-
-        session = fyersModel.SessionModel(
-            client_id=client_id, secret_key=secret_key,
-            redirect_uri=redirect_uri, response_type="code", grant_type="authorization_code"
+        auth_code = (
+            data.get("auth")
+            or parse_qs(urlparse(r4d.get("Url", "")).query).get("auth_code", [None])[0]
+            or parse_qs(urlparse(data.get("url", "")).query).get("auth_code", [None])[0]
         )
-        session.set_token(auth_code)
-        r5d = session.generate_token()
+        if not auth_code:
+            return None, f"Step 4: no auth_code in response: {r4d}"
+
+        # New Fyers API: exchange auth_code via validate-authcode using SHA-256 app hash
+        app_id_hash = hashlib.sha256(f"{app_id}:{secret_key}".encode()).hexdigest()
+        r5 = s.post("https://api-t1.fyers.in/api/v3/validate-authcode", json={
+            "grant_type": "authorization_code",
+            "appIdHash": app_id_hash,
+            "code": auth_code,
+        }, timeout=10)
+        r5d = r5.json()
         token = r5d.get("access_token")
+        if not token:
+            # Fallback: try legacy SDK exchange
+            session = fyersModel.SessionModel(
+                client_id=client_id, secret_key=secret_key,
+                redirect_uri=redirect_uri, response_type="code", grant_type="authorization_code"
+            )
+            session.set_token(auth_code)
+            r5d = session.generate_token()
+            token = r5d.get("access_token")
         if not token:
             return None, f"Step 5 failed: {r5d}"
         return token, None
